@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download, Moon, Sparkles, Sun, Trash2, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Moon, Sparkles, Sun, Trash2, Upload } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -16,8 +16,10 @@ import {
 import { useAuth } from "@/lib/auth";
 import { emptyBoard, type BoardData } from "@/lib/board/types";
 import { migrate } from "@/lib/board/service";
+import { exportBoardMarkdown, importMarkdown } from "@/lib/board/markdown";
+import { exportToXLSX, importXlsx } from "@/lib/board/xlsx";
 import { useBoard } from "@/lib/board/store";
-import { useT } from "@/lib/i18n/I18nProvider";
+import { useI18n, useT } from "@/lib/i18n/I18nProvider";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +37,7 @@ export default function Settings() {
   const { session } = useAuth();
   const { data, replaceBoard } = useBoard();
   const { theme, setTheme } = useTheme();
+  const { locale } = useI18n();
   const t = useT();
   const L = t.kairos.settings;
   const [ai, setAi] = useState<AiSettings>(loadAiSettings);
@@ -47,7 +50,12 @@ export default function Settings() {
     e.target.value = ""; // allow re-picking the same file
     if (!file) return;
     try {
-      const board = migrate(JSON.parse(await file.text()));
+      const name = file.name.toLowerCase();
+      const board = name.endsWith(".xlsx")
+        ? await importXlsx(await file.arrayBuffer())
+        : name.endsWith(".md")
+        ? importMarkdown(await file.text(), data)
+        : migrate(JSON.parse(await file.text()));
       if (board.projects.length === 0 && board.tasks.length === 0) {
         toast(L.importNothing, { description: L.importNothingDesc });
         return;
@@ -66,14 +74,26 @@ export default function Settings() {
     });
   }
 
-  function exportBoard() {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  function download(content: BlobPart, type: string, ext: string) {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kairos-board-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kairos-board-${new Date().toISOString().slice(0, 10)}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function exportJson() {
+    download(JSON.stringify(data, null, 2), "application/json", "json");
+  }
+
+  function exportMarkdown() {
+    download(exportBoardMarkdown(data), "text/markdown", "md");
+  }
+
+  async function exportXlsx() {
+    await exportToXLSX(data, locale, `kairos-board-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   return (
@@ -157,12 +177,18 @@ export default function Settings() {
 
       <Section eyebrow={L.dataEyebrow} title={L.dataTitle}>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportBoard}>
-            <Download className="mr-1.5 h-4 w-4" /> {L.exportBoard}
+          <Button variant="outline" onClick={exportJson}>
+            <Download className="mr-1.5 h-4 w-4" /> {L.exportJson}
           </Button>
-          <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={(e) => void onImportFile(e)} />
+          <Button variant="outline" onClick={exportMarkdown}>
+            <FileText className="mr-1.5 h-4 w-4" /> {L.exportMarkdown}
+          </Button>
+          <Button variant="outline" onClick={() => void exportXlsx()}>
+            <FileSpreadsheet className="mr-1.5 h-4 w-4" /> {L.exportXlsx}
+          </Button>
+          <input ref={fileRef} type="file" accept=".json,.md,.xlsx,application/json,text/markdown,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => void onImportFile(e)} />
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
-            <Upload className="mr-1.5 h-4 w-4" /> {L.importBoard}
+            <Upload className="mr-1.5 h-4 w-4" /> {L.importFile}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>

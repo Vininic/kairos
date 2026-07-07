@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUp, BarChart3, Brain, Calendar, Check, ChevronDown, Clock, ClipboardList,
-  FileText, History as HistoryIcon, Layers, Loader2, MessageSquare, Paperclip, PanelRightClose,
-  PanelRightOpen, Plus, Settings2, SlidersHorizontal, Sparkles, Target, Trash2, X,
+  AlertTriangle, ArrowUp, BarChart3, Brain, Calendar, Check, CheckCircle2, ChevronDown, Clock, ClipboardList,
+  FileText, History as HistoryIcon, Layers, Loader2, MessageSquare, Newspaper, Paperclip, PanelRightClose,
+  PanelRightOpen, Plus, RotateCcw, Settings2, SlidersHorizontal, Sparkles, Target, Trash2, X,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -23,10 +23,13 @@ import { isConfigured, loadAiSettings, modelOf, saveAiSettings, PROVIDER_LABELS,
 import { PRIORITY_HEX } from "@/components/board/priority";
 import { useBoard } from "@/lib/board/store";
 import { TASK_PRIORITIES, type BoardData } from "@/lib/board/types";
+import { generateDigest } from "@/lib/digest/generator";
+import { getDigest, setDigest } from "@/lib/digest/store";
+import type { Digest, ReportCard } from "@/lib/digest/types";
 import { useDateFormat, useI18n, useT } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
-type TabView = "overview" | "analysis" | "history";
+type TabView = "overview" | "analysis" | "history" | "digest";
 
 function initSessionState(): { sessions: ChatSession[]; activeId: string } {
   const stored = loadSessions();
@@ -50,6 +53,8 @@ export default function Aetheris() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [tab, setTab] = useState<TabView>("overview");
   const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [digest, setDigestState] = useState<Digest | null>(() => getDigest());
+  const [digestGenerating, setDigestGenerating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dataRef = useRef<BoardData>(data);
@@ -64,6 +69,17 @@ export default function Aetheris() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [activeSession?.messages, streamingText]);
+
+  useEffect(() => {
+    if (!getDigest()) {
+      const fresh = generateDigest(dataRef.current);
+      setDigest(fresh);
+      setDigestState(fresh);
+    }
+    // Runs once on mount so a first-time visit already has a digest; after
+    // that the user refreshes explicitly via the tab's "Atualizar" button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!isConfigured(settings)) {
     return (
@@ -138,6 +154,29 @@ export default function Aetheris() {
   function undoEntry(entry: HistoryEntry) {
     replaceBoard(entry.boardBefore);
     setHistory(markUndone(entry.id));
+  }
+
+  function generateDigestNow() {
+    setDigestGenerating(true);
+    const next = generateDigest(dataRef.current);
+    setDigest(next);
+    setDigestState(next);
+    setDigestGenerating(false);
+  }
+
+  function digestCardText(card: ReportCard): { title: string; body?: string } {
+    switch (card.kind) {
+      case "overdue":
+        return { title: L.digestOverdueTitle(card.count), body: L.digestListSuffix(card.sample.join(", ")) };
+      case "dueSoon":
+        return { title: L.digestDueSoonTitle(card.count), body: L.digestListSuffix(card.sample.join(", ")) };
+      case "stale":
+        return { title: L.digestStaleTitle(card.count), body: L.digestStaleSuffix(card.sample.join(", ")) };
+      case "completed":
+        return { title: L.digestCompletedTitle(card.count), body: L.digestCompletedBody };
+      case "imbalance":
+        return { title: L.digestImbalanceTitle(card.projectName), body: L.digestImbalanceBody(card.overdueCount) };
+    }
   }
 
   async function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -229,10 +268,14 @@ export default function Aetheris() {
     { icon: FileText, label: L.digest, prompt: L.digestPrompt },
   ];
 
+  const digestSeverityIcon = { warning: AlertTriangle, insight: Newspaper, positive: CheckCircle2 } as const;
+  const digestWarningCount = digest?.cards.filter((c) => c.severity === "warning").length ?? 0;
+
   const tabs: { key: TabView; label: string; icon: typeof ClipboardList; count: number }[] = [
     { key: "overview", label: L.tabOverview, icon: ClipboardList, count: dueSoon.length },
     { key: "analysis", label: L.tabAnalysis, icon: BarChart3, count: overdueTasks.length },
     { key: "history", label: L.tabHistory, icon: HistoryIcon, count: history.filter((h) => !h.undone).length },
+    { key: "digest", label: L.tabDigest, icon: Newspaper, count: digestWarningCount },
   ];
 
   return (
@@ -598,6 +641,47 @@ export default function Aetheris() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+
+          {tab === "digest" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                {digest ? (
+                  <span className="num text-[9px] text-muted-foreground/50">
+                    {L.digestGeneratedAt(new Intl.DateTimeFormat(bcp47, { dateStyle: "short", timeStyle: "short" }).format(new Date(digest.generatedAt)))}
+                  </span>
+                ) : <span />}
+                <button
+                  onClick={() => generateDigestNow()}
+                  disabled={digestGenerating}
+                  className="flex items-center gap-1 text-[10px] font-medium text-secondary hover:underline disabled:opacity-50"
+                >
+                  <RotateCcw className="h-3 w-3" /> {digestGenerating ? L.digestGenerating : digest ? L.digestRegenerate : L.digestGenerate}
+                </button>
+              </div>
+
+              {digest && digest.cards.length === 0 && (
+                <div className="kairos-card flex items-center gap-2 p-3 text-[11px] text-muted-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-secondary" /> {L.digestAllClear}
+                </div>
+              )}
+
+              {digest && digest.cards.map((card, i) => {
+                const { title, body } = digestCardText(card);
+                const Icon = digestSeverityIcon[card.severity];
+                return (
+                  <div key={i} className="kairos-card p-3">
+                    <div className="flex items-start gap-2">
+                      <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", card.severity === "warning" ? "text-destructive" : card.severity === "positive" ? "text-secondary" : "text-muted-foreground")} />
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-medium text-card-foreground">{title}</div>
+                        {body && <p className="mt-0.5 text-[10px] text-muted-foreground">{body}</p>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
