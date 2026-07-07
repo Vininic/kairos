@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kairos design system — twilight ink + rose-gold horizon on warm parchment.
+   Sibling of Chronos (midnight + bronze): same paper, same cards, same type —
+   but where Chronos is the fixed hours of night, Kairos is the sky at the
+   exact moment day tips into night: violet overhead, rose at the horizon. */
+
+@layer base {
+  :root {
+    /* Surfaces — the shared suite parchment */
+    --background: 39 33% 95%;          /* #F7F4EE parchment */
+    --foreground: 288 32% 14%;         /* deep twilight ink */
+
+    --surface-raised: 38 40% 97%;
+    --surface-veil: 39 22% 88%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 288 32% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 288 32% 14%;
+
+    /* Brand */
+    --primary: 288 40% 21%;            /* deep plum, the sky overhead */
+    --primary-foreground: 39 33% 95%;
+    --primary-deep: 288 46% 14%;       /* near-black plum */
+    --primary-glow: 288 32% 33%;
+
+    --secondary: 340 55% 62%;          /* rose-gold, the horizon line */
+    --secondary-foreground: 39 33% 97%;
+    --secondary-soft: 344 68% 78%;     /* pale rose-gold */
+
+    --muted: 39 22% 90%;
+    --muted-foreground: 288 14% 32%;
+
+    --accent: 344 68% 78%;
+    --accent-foreground: 288 46% 14%;
+
+    --neutral-veil: 39 22% 82%;
+
+    --destructive: 8 62% 44%;
+    --destructive-foreground: 39 33% 97%;
+
+    --border: 39 18% 84%;
+    --input: 39 18% 84%;
+    --ring: 340 55% 62%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar — strongly twilight */
+    --sidebar-background: 288 46% 8%;
+    --sidebar-foreground: 300 20% 86%;
+    --sidebar-primary: 340 55% 62%;
+    --sidebar-primary-foreground: 288 46% 8%;
+    --sidebar-accent: 288 36% 15%;
+    --sidebar-accent-foreground: 39 33% 95%;
+    --sidebar-border: 288 30% 19%;
+    --sidebar-ring: 340 55% 62%;
+
+    /* Gradients */
+    --gradient-dusk: linear-gradient(160deg, hsl(288 46% 8%) 0%, hsl(288 40% 14%) 60%, hsl(288 34% 20%) 100%);
+    --gradient-rosegold: linear-gradient(135deg, hsl(344 68% 78%) 0%, hsl(340 55% 62%) 100%);
+    --gradient-parchment: radial-gradient(1200px 600px at 80% -10%, hsl(344 68% 78% / 0.16), transparent 60%),
+                          radial-gradient(900px 500px at -10% 110%, hsl(288 40% 21% / 0.10), transparent 60%),
+                          linear-gradient(180deg, hsl(39 35% 96%), hsl(39 33% 93%));
+    --gradient-veil: linear-gradient(180deg, hsl(39 33% 95% / 0), hsl(39 33% 95% / 0.9));
+
+    /* Shadows */
+    --shadow-soft: 0 1px 2px hsl(288 46% 10% / 0.04), 0 8px 24px -12px hsl(288 46% 10% / 0.12);
+    --shadow-elevated: 0 2px 4px hsl(288 46% 10% / 0.06), 0 24px 48px -20px hsl(288 46% 10% / 0.22);
+    --shadow-rosegold: 0 10px 30px -12px hsl(340 55% 62% / 0.55);
+
+    /* Motion */
+    --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Dark theme — "Twilight Atelier"                                    */
+  /*  Same palette logic as Chronos' Midnight Atelier, inverted: deep     */
+  /*  twilight surfaces with rose-gold taking the lead as the accent.     */
+  /* ------------------------------------------------------------------ */
+  .dark {
+    --background: 288 34% 6%;
+    --foreground: 39 30% 92%;
+
+    --surface-raised: 288 30% 10%;
+    --surface-veil:   288 26% 13%;
+
+    --card: 288 30% 9%;
+    --card-foreground: 39 30% 92%;
+
+    --popover: 288 30% 9%;
+    --popover-foreground: 39 30% 92%;
+
+    --primary: 340 60% 72%;            /* rose-gold becomes the lead in dark */
+    --primary-foreground: 288 48% 7%;
+    --primary-deep: 336 48% 48%;
+    --primary-glow: 344 72% 80%;
+
+    --secondary: 340 60% 72%;
+    --secondary-foreground: 288 48% 7%;
+    --secondary-soft: 344 72% 82%;
+
+    --muted: 288 20% 17%;
+    --muted-foreground: 39 18% 70%;
+
+    --accent: 340 60% 72%;
+    --accent-foreground: 288 48% 7%;
+
+    --neutral-veil: 288 18% 21%;
+
+    --destructive: 8 70% 55%;
+    --destructive-foreground: 39 30% 96%;
+
+    --border: 288 24% 16%;
+    --input: 288 24% 16%;
+    --ring: 340 60% 72%;
+
+    --sidebar-background: 288 58% 4.5%;
+    --sidebar-foreground: 39 24% 80%;
+    --sidebar-primary: 340 60% 72%;
+    --sidebar-primary-foreground: 288 48% 7%;
+    --sidebar-accent: 288 34% 10%;
+    --sidebar-accent-foreground: 39 30% 96%;
+    --sidebar-border: 288 30% 14%;
+    --sidebar-ring: 340 60% 72%;
+
+    --gradient-dusk: linear-gradient(160deg, hsl(288 58% 4.5%) 0%, hsl(288 46% 9%) 60%, hsl(288 38% 14%) 100%);
+    --gradient-rosegold: linear-gradient(135deg, hsl(344 72% 82%) 0%, hsl(340 60% 55%) 100%);
+    --gradient-parchment: radial-gradient(1200px 600px at 80% -10%, hsl(340 60% 72% / 0.10), transparent 60%),
+                          radial-gradient(900px 500px at -10% 110%, hsl(288 40% 30% / 0.18), transparent 60%),
+                          linear-gradient(180deg, hsl(288 34% 6%), hsl(288 30% 8%));
+    --gradient-veil: linear-gradient(180deg, hsl(288 34% 6% / 0), hsl(288 34% 6% / 0.9));
+
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.4), 0 8px 24px -12px hsl(0 0% 0% / 0.55);
+    --shadow-elevated: 0 2px 4px hsl(0 0% 0% / 0.45), 0 24px 48px -20px hsl(0 0% 0% / 0.7);
+    --shadow-rosegold: 0 10px 30px -12px hsl(340 60% 60% / 0.45);
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { height: 100%; }
+  body { min-height: 100%; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "ss01","cv11";
+  }
+  .font-display { font-family: 'Fraunces', ui-serif, Georgia, serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .kairos-surface { background: var(--gradient-parchment); }
+  .kairos-card {
+    @apply bg-card rounded-xl border;
+    box-shadow: var(--shadow-soft);
+  }
+  .kairos-card-elevated {
+    @apply bg-card rounded-xl border;
+    box-shadow: var(--shadow-elevated);
+  }
+  .horizon-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--secondary) / 0.6), transparent);
+  }
+  .hairline { border-color: hsl(var(--border)); }
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .bg-dusk { background: var(--gradient-dusk); }
+  .bg-rosegold { background: var(--gradient-rosegold); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-rosegold { box-shadow: var(--shadow-rosegold); }
+  .ring-rosegold { box-shadow: 0 0 0 1px hsl(var(--secondary) / 0.4); }
+}
