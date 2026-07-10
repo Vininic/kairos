@@ -82,7 +82,7 @@ export function buildStyledWorkbook(data: BoardData, locale: Locale = "en"): Exc
   const activeProjects = data.projects.filter((p) => !p.archivedAt);
 
   /* ── 1. Board: colored blocks, one project group at a time ─────────────── */
-  const board = wb.addWorksheet(L.sheet.board, { views: [{ state: "frozen", ySplit: 0 }] });
+  const board = wb.addWorksheet(L.sheet.board);
   TASK_STATUSES.forEach((_, i) => { board.getColumn(1 + i).width = 26; });
 
   let row = 1;
