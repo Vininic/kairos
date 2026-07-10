@@ -16,7 +16,7 @@ export default function Landing() {
   const SUITE = [
     { n: "Chronos", live: true, href: CHRONOS_URL },
     { n: "Kairos", live: true, href: "/projects" },
-    { n: "Pluto", live: false },
+    { n: "Pluto", live: true, href: "https://pluto-suite.vercel.app" },
     { n: "Hermes", live: false },
   ].map((app, i) => ({ ...app, r: L.suiteApps[i].role, d: L.suiteApps[i].desc }));
 
