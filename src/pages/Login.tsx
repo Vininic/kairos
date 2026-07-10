@@ -14,11 +14,12 @@ import { useT } from "@/lib/i18n/I18nProvider";
 type Mode = "local" | "cloud";
 
 export default function Login() {
-  const { signIn, isCloud } = useAuth();
+  const { signIn, signUp, isCloud } = useAuth();
   const navigate = useNavigate();
   const t = useT();
   const L = t.kairos.login;
   const [mode, setMode] = useState<Mode>("local");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,9 +39,11 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const err = await signIn(name.trim() || undefined, email.trim(), password);
+      const err = authMode === "signup"
+        ? await signUp(name.trim() || undefined, email.trim(), password)
+        : await signIn(name.trim() || undefined, email.trim(), password);
       if (typeof err === "string") {
-        toast(err);
+        toast(err === "invalid_credentials" ? L.badCredentials : err === "account_exists" ? L.accountExists : err);
         return;
       }
       navigate("/projects");
@@ -129,11 +132,18 @@ export default function Login() {
                 <Label htmlFor="password" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                   {L.password}
                 </Label>
-                <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 border-border bg-card" />
+                <Input id="password" type="password" autoComplete={authMode === "signup" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 border-border bg-card" />
               </div>
               <Button type="submit" disabled={loading} className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary-deep">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{L.cloudSubmit} <ArrowRight className="ml-1.5 h-4 w-4" /></>}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{authMode === "signup" ? L.signUpSubmit : L.signInSubmit} <ArrowRight className="ml-1.5 h-4 w-4" /></>}
               </Button>
+              <button
+                type="button"
+                onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
+                className="w-full text-center text-xs text-secondary hover:underline"
+              >
+                {authMode === "signin" ? L.toggleToSignUp : L.toggleToSignIn}
+              </button>
             </form>
           )}
         </div>
