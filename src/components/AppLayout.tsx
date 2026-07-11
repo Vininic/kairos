@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { CircleHelp, Cloud, LayoutGrid, MonitorSmartphone, PanelLeftClose, Settings2, Sparkles } from "lucide-react";
+import { CircleHelp, Cloud, LayoutGrid, Menu, MonitorSmartphone, PanelLeftClose, Settings2, Sparkles } from "lucide-react";
 import Logo, { KairosMark } from "@/components/KairosLogo";
 import ProfileDialog from "@/components/ProfileDialog";
 import Topbar from "@/components/Topbar";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth";
 import { useBoard } from "@/lib/board/store";
 import { useT } from "@/lib/i18n/I18nProvider";
@@ -50,6 +51,7 @@ export default function AppLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const projects = data.projects.filter((p) => !p.archivedAt);
   const initial = session?.name.trim().charAt(0).toUpperCase() || "K";
 
@@ -70,6 +72,17 @@ export default function AppLayout() {
         ? "bg-sidebar-accent text-sidebar-accent-foreground"
         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
       collapsed && "justify-center px-0",
+    );
+
+  // Independent of the desktop sidebar's `collapsed` state — the drawer
+  // always shows full labels regardless of what the (hidden, on mobile)
+  // desktop sidebar is currently doing.
+  const mobileNavClass = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+      isActive
+        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
     );
 
   const system = [
@@ -136,9 +149,21 @@ export default function AppLayout() {
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Mobile navigation — links + profile only; theme/language live in Topbar below */}
+        {/* Mobile header — hamburger opens the full nav drawer below; the
+            quick-access icons stay for one-tap access to the two busiest
+            destinations, profile always visible. */}
         <header className="flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3 md:hidden">
-          <NavLink to="/projects"><Logo variant="light" /></NavLink>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              aria-label={t.kairos.nav.openMenu}
+              onClick={() => setMobileNavOpen(true)}
+              className="grid h-8 w-8 place-items-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <NavLink to="/projects"><Logo variant="light" /></NavLink>
+          </div>
           <div className="flex items-center gap-2">
             <NavLink to="/aetheris" aria-label={t.kairos.nav.aetheris} className="grid h-8 w-8 place-items-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent">
               <Sparkles className="h-4 w-4" />
@@ -156,6 +181,45 @@ export default function AppLayout() {
             </button>
           </div>
         </header>
+
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetContent side="left" className="flex w-72 flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
+            <SheetTitle className="sr-only">{t.kairos.nav.boards}</SheetTitle>
+            <div className="px-5 pb-4 pt-5">
+              <Logo variant="light" />
+            </div>
+            <div className="horizon-rule mx-4" />
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <div className="mb-2 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">
+                {t.kairos.nav.boards}
+              </div>
+              <NavLink to="/projects" end onClick={() => setMobileNavOpen(false)} className={mobileNavClass}>
+                <LayoutGrid className="h-4 w-4 shrink-0 text-secondary-soft" />
+                <span className="flex-1">{t.kairos.nav.allProjects}</span>
+              </NavLink>
+              {projects.map((p) => (
+                <NavLink key={p.id} to={`/projects/${p.id}`} onClick={() => setMobileNavOpen(false)} className={mobileNavClass}>
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
+                  <span className="truncate">{p.name}</span>
+                </NavLink>
+              ))}
+              <NavLink to="/aetheris" onClick={() => setMobileNavOpen(false)} className={mobileNavClass}>
+                <Sparkles className="h-4 w-4 shrink-0 text-secondary-soft" />
+                <span>{t.kairos.nav.aetheris}</span>
+              </NavLink>
+
+              <div className="mb-2 mt-7 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">
+                {t.kairos.nav.system}
+              </div>
+              {system.map(({ to, label, icon: Icon }) => (
+                <NavLink key={to} to={to} onClick={() => setMobileNavOpen(false)} className={mobileNavClass}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          </SheetContent>
+        </Sheet>
 
         <Topbar />
 

@@ -55,6 +55,7 @@ const pt = {
       collapse: "Recolher barra lateral",
       expand: "Expandir barra lateral",
       profile: "Perfil",
+      openMenu: "Abrir menu",
     },
     status: {
       backlog: "Pendente",
@@ -417,6 +418,7 @@ const en = {
       collapse: "Collapse sidebar",
       expand: "Expand sidebar",
       profile: "Profile",
+      openMenu: "Open menu",
     },
     status: {
       backlog: "Backlog",
