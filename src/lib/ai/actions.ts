@@ -73,7 +73,7 @@ export function parseActions(reply: string): { prose: string; actions: AetherisA
   return { prose, actions };
 }
 
-function findProject(data: BoardData, ref: string): Project | undefined {
+export function findProject(data: BoardData, ref: string): Project | undefined {
   return data.projects.find((p) => p.id === ref) ?? data.projects.find((p) => p.name.toLowerCase() === ref.toLowerCase());
 }
 

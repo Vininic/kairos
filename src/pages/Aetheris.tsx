@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
+import ActionPill from "@/components/ActionPill";
 import Markdown from "@/components/Markdown";
 import { applyAction, describeAction, parseActions, type AetherisAction } from "@/lib/ai/actions";
 import { readAttachment, withAttachments, type FileAttachment } from "@/lib/ai/attachments";
@@ -26,6 +27,7 @@ import { TASK_PRIORITIES, type BoardData } from "@/lib/board/types";
 import { generateDigest } from "@/lib/digest/generator";
 import { getDigest, setDigest } from "@/lib/digest/store";
 import type { Digest, ReportCard } from "@/lib/digest/types";
+import { LOCALE_LABELS } from "@/lib/i18n/dictionaries";
 import { useDateFormat, useI18n, useT } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +42,7 @@ function initSessionState(): { sessions: ChatSession[]; activeId: string } {
 export default function Aetheris() {
   const { data, replaceBoard } = useBoard();
   const t = useT();
-  const { bcp47 } = useI18n();
+  const { bcp47, locale } = useI18n();
   const fmt = useDateFormat();
   const L = t.kairos.aetheris;
 
@@ -219,7 +221,7 @@ export default function Aetheris() {
     const lastIndex = payloadMessages.length - 1;
     payloadMessages[lastIndex] = { ...payloadMessages[lastIndex], content: withAttachments(text, pendingAttachments) };
     const chat: ChatMessage[] = [
-      { role: "system", content: buildSystemPrompt(dataRef.current, today) },
+      { role: "system", content: buildSystemPrompt(dataRef.current, today, LOCALE_LABELS[locale].long) },
       ...payloadMessages,
     ];
 
@@ -359,14 +361,11 @@ export default function Aetheris() {
             {proposal && (
               <div className="rounded-xl border border-secondary/40 bg-card p-4 shadow-soft">
                 <div className="text-[11px] uppercase tracking-[0.22em] text-secondary">{L.proposedChanges}</div>
-                <ul className="mt-2 space-y-1.5">
+                <div className="mt-2 space-y-1.5">
                   {proposal.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-card-foreground">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-secondary" />
-                      {describeAction(dataRef.current, a, t.kairos)}
-                    </li>
+                    <ActionPill key={i} action={a} data={dataRef.current} K={t.kairos} />
                   ))}
-                </ul>
+                </div>
                 <div className="mt-3 flex gap-2">
                   <Button size="sm" onClick={() => applyActions(proposal)} className="bg-primary text-primary-foreground hover:bg-primary-deep">
                     <Check className="mr-1.5 h-3.5 w-3.5" /> {L.apply}
