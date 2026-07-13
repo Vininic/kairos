@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { DEFAULT_LOCALE, DICTIONARIES, LOCALE_LABELS, SUPPORTED_LOCALES, type Dictionary, type Locale } from "./dictionaries";
 
+export type { Locale };
+
 /**
  * Kairos i18n provider — mirrors Chronos' `lib/i18n/I18nProvider.tsx` exactly
  * (same shape, same `suite.locale` storage key) so the pattern reads as one

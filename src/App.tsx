@@ -1,12 +1,13 @@
-import { Component, type ReactNode } from "react";
+import { Component, useEffect, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
-import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { ThemeProvider, useTheme } from "@/lib/theme/ThemeProvider";
+import { I18nProvider, useI18n, type Locale } from "@/lib/i18n/I18nProvider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { BoardProvider } from "@/lib/board/store";
 import { useBoardSync } from "@/lib/sync/boardSync";
+import { pullSuitePrefs, pushSuitePrefs } from "@/lib/prefs";
 import AppLayout from "@/components/AppLayout";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -40,6 +41,26 @@ function BoardSyncMount() {
   return null;
 }
 
+function SyncPrefs() {
+  const { isCloud } = useAuth();
+  const { setTheme } = useTheme();
+  const { setLocale } = useI18n();
+
+  useEffect(() => {
+    if (!isCloud) return;
+    let cancelled = false;
+    void pullSuitePrefs().then((prefs) => {
+      if (cancelled) return;
+      if (prefs?.theme) setTheme(prefs.theme);
+      if (prefs?.locale && (prefs.locale === "pt" || prefs.locale === "en"))
+        setLocale(prefs.locale as Locale);
+    });
+    return () => { cancelled = true; };
+  }, [isCloud, setTheme, setLocale]);
+
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider>
@@ -50,6 +71,7 @@ const App = () => (
             <AuthProvider>
               <BoardProvider>
                 <BoardSyncMount />
+                <SyncPrefs />
                 <Routes>
                   <Route path="/" element={<Landing />} />
                   <Route path="/login" element={<Login />} />
