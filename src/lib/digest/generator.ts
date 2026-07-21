@@ -1,9 +1,11 @@
-/** Pure heuristic modules over BoardData — no AI call, no side effects, so
- *  the digest works with zero setup and is trivial to test. Each module
- *  looks at one dimension of the board; generateDigest orders the findings
- *  by urgency (overdue and stale work first, good news last). */
+/** Kairos' board digest — tries the AI pass first (lib/ai/insight.ts) and
+ *  falls back to the heuristic modules below when it's unavailable, fails,
+ *  or returns nothing usable. See types.ts for the full rationale; this
+ *  file used to be "pure heuristic, no AI call, no side effects" — the
+ *  heuristic modules are unchanged, just demoted to fallback. */
 import { isOverdue } from "@/lib/board/service";
 import type { BoardData, Task } from "@/lib/board/types";
+import { aiDigestCards } from "@/lib/ai/insight";
 import type { Digest, ReportCard } from "./types";
 
 const DUE_SOON_DAYS = 7;
@@ -58,16 +60,35 @@ function imbalanceCard(data: BoardData, tasks: Task[], today: string): ReportCar
   return { kind: "imbalance", severity: "insight", projectName: top.project.name, overdueCount: top.overdueCount };
 }
 
-export function generateDigest(data: BoardData, today = new Date().toISOString().slice(0, 10)): Digest {
+function heuristicCards(data: BoardData, today: string): ReportCard[] {
   const tasks = data.tasks.filter((t) => !t.archivedAt);
-
-  const cards = [
+  return [
     overdueCard(tasks, today),
     staleCard(tasks, today),
     dueSoonCard(tasks, today),
     imbalanceCard(data, tasks, today),
     completedCard(tasks, today),
   ].filter((c): c is ReportCard => c !== null);
+}
 
-  return { date: today, generatedAt: new Date().toISOString(), cards };
+export async function generateDigest(
+  data: BoardData,
+  localeLabel: string,
+  today = new Date().toISOString().slice(0, 10),
+): Promise<Digest> {
+  const ai = await aiDigestCards(data, localeLabel);
+  if (ai && ai.length > 0) {
+    return {
+      date: today,
+      generatedAt: new Date().toISOString(),
+      cards: ai.map((c): ReportCard => ({ kind: "ai", title: c.title, body: c.body, severity: c.severity })),
+      generatedBy: "ai",
+    };
+  }
+  return {
+    date: today,
+    generatedAt: new Date().toISOString(),
+    cards: heuristicCards(data, today),
+    generatedBy: "heuristic",
+  };
 }

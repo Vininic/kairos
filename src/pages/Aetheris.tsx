@@ -73,11 +73,16 @@ export default function Aetheris() {
   }, [activeSession?.messages, streamingText]);
 
   useEffect(() => {
-    if (!getDigest()) {
-      const fresh = generateDigest(dataRef.current);
+    if (getDigest()) return;
+    let cancelled = false;
+    generateDigest(dataRef.current, LOCALE_LABELS[locale].long).then((fresh) => {
+      if (cancelled) return;
       setDigest(fresh);
       setDigestState(fresh);
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
     // Runs once on mount so a first-time visit already has a digest; after
     // that the user refreshes explicitly via the tab's "Atualizar" button.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,9 +163,9 @@ export default function Aetheris() {
     setHistory(markUndone(entry.id));
   }
 
-  function generateDigestNow() {
+  async function generateDigestNow() {
     setDigestGenerating(true);
-    const next = generateDigest(dataRef.current);
+    const next = await generateDigest(dataRef.current, LOCALE_LABELS[locale].long);
     setDigest(next);
     setDigestState(next);
     setDigestGenerating(false);
@@ -178,6 +183,8 @@ export default function Aetheris() {
         return { title: L.digestCompletedTitle(card.count), body: L.digestCompletedBody };
       case "imbalance":
         return { title: L.digestImbalanceTitle(card.projectName), body: L.digestImbalanceBody(card.overdueCount) };
+      case "ai":
+        return { title: card.title, body: card.body };
     }
   }
 
@@ -647,12 +654,22 @@ export default function Aetheris() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 {digest ? (
-                  <span className="num text-[9px] text-muted-foreground/50">
-                    {L.digestGeneratedAt(new Intl.DateTimeFormat(bcp47, { dateStyle: "short", timeStyle: "short" }).format(new Date(digest.generatedAt)))}
+                  <span className="flex items-center gap-1.5 text-[9px] text-muted-foreground/50">
+                    <span className="num">
+                      {L.digestGeneratedAt(new Intl.DateTimeFormat(bcp47, { dateStyle: "short", timeStyle: "short" }).format(new Date(digest.generatedAt)))}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 font-medium uppercase tracking-wider",
+                        digest.generatedBy === "ai" ? "bg-secondary/15 text-secondary" : "bg-muted-foreground/10 text-muted-foreground/60",
+                      )}
+                    >
+                      {digest.generatedBy === "ai" ? L.digestAiBadge : L.digestHeuristicBadge}
+                    </span>
                   </span>
                 ) : <span />}
                 <button
-                  onClick={() => generateDigestNow()}
+                  onClick={() => void generateDigestNow()}
                   disabled={digestGenerating}
                   className="flex items-center gap-1 text-[10px] font-medium text-secondary hover:underline disabled:opacity-50"
                 >
